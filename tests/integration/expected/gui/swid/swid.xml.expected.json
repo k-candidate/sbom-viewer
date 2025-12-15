@@ -1,0 +1,19 @@
+{
+  "component_rows": [
+    [
+      "Snort",
+      "3.0",
+      "",
+      "Cisco-Snort-3.0"
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "swid/swid.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "Snort",
+    "spec_version": "SWID",
+    "supplier": "Cisco",
+    "version": "3.0"
+  }
+}

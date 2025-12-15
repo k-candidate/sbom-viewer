@@ -1,0 +1,71 @@
+[project]
+name = "sbom-viewer"
+version = "1.0.0"
+description = "Add your description here"
+requires-python = ">=3.14.2"
+dependencies = []
+authors = [
+  { name = "k-candidate" }
+]
+keywords = ["python", "tkinter", "gui", "sbom"]
+readme = { file = "README.md", content-type = "text/markdown" }
+
+[project.urls]
+Repository = "https://github.com/k-candidate/sbom-viewer"
+"Blog" = ""
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.12.11",
+  "mypy>=1.17.1",
+  "pytest>=9.0.2",
+  "pre-commit>=4.5.1",
+  "pytest-cov>=7.1.0",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 79
+exclude = [
+  ".git",
+  ".mypy_cache",
+  ".pytest_cache",
+  ".venv",
+  "build",
+  "dist",
+  "tests"
+]
+
+[tool.ruff.lint]
+# Enable common linting rules
+select = ["E", "F", "I"]  # E=pycodestyle, F=pyflakes, I=import sorting
+ignore = ["E501"]
+
+[tool.ruff.format]
+# Configure Ruff formatter instead of Black
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = 3.14
+ignore_missing_imports = true
+strict = true
+warn_unused_configs = true
+exclude = [
+  "build",
+  "tests"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration"]
+addopts = [
+  "--cov=app",
+  "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 70

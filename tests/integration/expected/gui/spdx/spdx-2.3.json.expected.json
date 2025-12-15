@@ -1,0 +1,55 @@
+{
+  "component_rows": [
+    [
+      "JUnit",
+      "3.8.1",
+      "",
+      ""
+    ],
+    [
+      "Apache Log4j SLF4J Binding",
+      "",
+      "",
+      ""
+    ],
+    [
+      "SLF4J API Module",
+      "",
+      "",
+      ""
+    ],
+    [
+      "Apache Log4j API",
+      "",
+      "",
+      ""
+    ],
+    [
+      "Apache Log4j Core",
+      "",
+      "",
+      ""
+    ],
+    [
+      "examplemaven",
+      "0.0.1",
+      "Apache-2.0",
+      ""
+    ]
+  ],
+  "dependency_rows": [
+    [
+      "examplemaven",
+      "JUnit",
+      "test"
+    ]
+  ],
+  "fixture": "spdx/spdx-2.3.json",
+  "metadata": {
+    "creation_date": "2024-11-18T10:22:12Z",
+    "name": "examplemaven",
+    "spec_version": "SPDX-2.3",
+    "supplier": "",
+    "version": "SPDX-2.3"
+  }
+}

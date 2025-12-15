@@ -1,0 +1,28 @@
+name: Run unit tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.14"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Install dependencies and dev tools
+      run: uv sync --locked --all-extras
+
+    - name: Install plugin
+      run: uv pip install pytest-github-actions-annotate-failures
+
+    - name: Run unit tests
+      run: uv run pytest tests/unit -v

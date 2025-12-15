@@ -1,0 +1,31 @@
+{
+  "component_rows": [
+    [
+      "zlib",
+      "1.2.11",
+      "Zlib License",
+      "pkg:rpm/zlib@1.2.11?arch=x86_64"
+    ],
+    [
+      "/usr/lib64/libz.so.1.2.11",
+      "",
+      "",
+      ""
+    ],
+    [
+      "/usr/lib64/libz.so.1",
+      "",
+      "",
+      ""
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "swid/swid5.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "zlib",
+    "spec_version": "SWID",
+    "supplier": "Red Hat, Inc.",
+    "version": "1.2.11"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "component_rows": [
+    [
+      "six",
+      "1.16.0",
+      "MIT",
+      "pkg:pypi/six@1.16.0"
+    ]
+  ],
+  "dependency_rows": [
+    [
+      "root-component",
+      "six==1.16.0",
+      "direct"
+    ],
+    [
+      "six==1.16.0",
+      "None",
+      "direct"
+    ]
+  ],
+  "fixture": "cyclonedx/cdx-1.6.json",
+  "metadata": {
+    "creation_date": "",
+    "name": "editable-self",
+    "spec_version": "1.6",
+    "supplier": "",
+    "version": "0.1.0"
+  }
+}

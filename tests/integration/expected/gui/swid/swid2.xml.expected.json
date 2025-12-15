@@ -1,0 +1,19 @@
+{
+  "component_rows": [
+    [
+      "ProductABC",
+      "4.00.0000",
+      "",
+      "ProductABC_4.0.0_D8F6AD25-2351-D3D1-D235-13JSL23HS151"
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "swid/swid2.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "ProductABC",
+    "spec_version": "SWID",
+    "supplier": "Flexera",
+    "version": "4.00.0000"
+  }
+}

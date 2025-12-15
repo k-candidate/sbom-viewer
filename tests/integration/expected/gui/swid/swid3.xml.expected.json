@@ -1,0 +1,19 @@
+{
+  "component_rows": [
+    [
+      "Cisco Secure Endpoints for Android",
+      "2.1.0",
+      "",
+      "Cisco-Cisco%20Secure%20Endpoints%20for%20Android-2.1.0"
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "swid/swid3.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "Cisco Secure Endpoints for Android",
+    "spec_version": "SWID",
+    "supplier": "Cisco",
+    "version": "2.1.0"
+  }
+}

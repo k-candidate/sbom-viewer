@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<swid:software_identification_tag xsi:schemaLocation="http://standards.iso.org/iso/19770/-2/2009/schema.xsd http://standards.iso.org/iso/19770/-2/2009/schema.xsd" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:swid="http://standards.iso.org/iso/19770/-2/2009/schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:fs="http://www.flexera.com/swid/2011/arp">
+    <!-- Mandatory elements -->
+    <swid:entitlement_required_indicator id="entitlement_required_indicator">true
+    </swid:entitlement_required_indicator>
+    <swid:product_title id="product_title">ProductABC</swid:product_title>
+    <swid:product_version id="version_name">
+        <swid:name>4.00.0000</swid:name>
+        <swid:numeric>
+            <swid:major id="version_major">4</swid:major>
+            <swid:minor id="version_minor">0</swid:minor>
+            <swid:build id="version_build">0</swid:build>
+            <swid:review id="version_review">0</swid:review>
+        </swid:numeric>
+    </swid:product_version>
+    <swid:software_creator>
+        <swid:name id="creator_name">Flexera</swid:name>
+        <swid:regid id="creator_regid">regid.1986-12.com.flexera</swid:regid>
+    </swid:software_creator>
+    <swid:software_licensor>
+        <swid:name id="licensor_name">Flexera</swid:name>
+        <swid:regid id="licensor_regid">regid.1986-12.com.flexera</swid:regid>
+    </swid:software_licensor>
+    <swid:software_id>
+        <swid:unique_id id="unique_id">ProductABC_4.0.0_D8F6AD25-2351-D3D1-D235-13JSL23HS151
+        </swid:unique_id>
+        <swid:tag_creator_regid id="tag_creator_regid">regid.2009-06.com.flexera,
+        AdminStudio</swid:tag_creator_regid>
+    </swid:software_id>
+    <swid:tag_creator>
+        <swid:name id="tag_name">Flexera</swid:name>
+        <swid:regid id="tag_regid">regid.2009-06.com.flexera,AdminStudio</swid:regid>
+    </swid:tag_creator>
+    <swid:extended_information xsi:schemaLocation="http://www.flexera.com/swid/2011/arp
+    http://www.flexera.com/swid/2011/arp">
+        <fs:original_arp_guid id="original_arp_guid">D8F6AD25-2351-D3D1-D235-13JSL23HS151
+        </fs:original_arp_guid>
+        <fs:original_arp_publisher id="original_arp_publisher">Flexera
+        </fs:original_arp_publisher>
+        <fs:original_arp_display_name id="original_arp_display_name">Product ABC 4.0
+        </fs:original_arp_display_name>
+        <fs:original_arp_display_version id="original_arp_display_version">4.0.0
+        </fs:original_arp_display_version>
+        <fs:current_arp_guid>D8F6AD25-2351-D3D1-D235-13JSL23HS151</fs:current_arp_guid>
+        <fs:current_arp_publisher>Flexera</fs:current_publisher>
+        <fs:current_arp_display_name>Product ABC 4.0</fs:current_arp_display_name>
+        <fs:current_arp_display_version>4.0.0</fs:current_arp_display_version>
+        <fs:adminstudio_app_catalog_package_id>13</fs:adminstudio_app_catalog_package_id>
+        <fs:adminstudio_app_catalog_machine_name>sch101</fs:adminstudio_app_catalog_machine_name>
+        <fs:adminstudio_app_catalog_db_name>jan18_1</fs:adminstudio_app_catalog_db_name>
+        <fs:adminstudio_app_catalog_guid>9BC14888-65EA-8F03</fs:adminstudio_app_catalog_guid>
+    </swid:extended_information>
+</swid:software_identification_tag>

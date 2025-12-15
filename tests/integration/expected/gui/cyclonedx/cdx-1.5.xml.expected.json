@@ -1,0 +1,30 @@
+{
+  "component_rows": [
+    [
+      "six",
+      "1.16.0",
+      "MIT",
+      "pkg:pypi/six@1.16.0"
+    ]
+  ],
+  "dependency_rows": [
+    [
+      "root-component",
+      "six==1.16.0",
+      "direct"
+    ],
+    [
+      "six==1.16.0",
+      "None",
+      "direct"
+    ]
+  ],
+  "fixture": "cyclonedx/cdx-1.5.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "cyclonedx-py",
+    "spec_version": "1.5",
+    "supplier": "",
+    "version": "thisVersion-testing"
+  }
+}
