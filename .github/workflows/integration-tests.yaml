@@ -1,0 +1,31 @@
+name: Run integration tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        run: uv sync --locked --all-extras
+
+      - name: Install pytest annotate plugin
+        run: uv pip install pytest-github-actions-annotate-failures
+
+      - name: Run integration tests
+        run: xvfb-run -a uv run pytest tests/integration -v

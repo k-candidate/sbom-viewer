@@ -1,0 +1,63 @@
+{
+  "component_rows": [
+    [
+      "./src/hello.c",
+      "",
+      "",
+      ""
+    ],
+    [
+      "./build/hello",
+      "",
+      "",
+      ""
+    ],
+    [
+      "./src/Makefile",
+      "",
+      "",
+      ""
+    ],
+    [
+      "hello",
+      "",
+      "",
+      ""
+    ]
+  ],
+  "dependency_rows": [
+    [
+      "hello",
+      "./src/hello.c",
+      "contains"
+    ],
+    [
+      "hello",
+      "./build/hello",
+      "contains"
+    ],
+    [
+      "./src/Makefile",
+      "./build/hello",
+      "generates"
+    ],
+    [
+      "./src/hello.c",
+      "./build/hello",
+      "generates"
+    ],
+    [
+      "hello",
+      "./src/Makefile",
+      "contains"
+    ]
+  ],
+  "fixture": "spdx/spdx-3.0.json",
+  "metadata": {
+    "creation_date": "2021-08-26T01:46:00Z",
+    "name": "hello",
+    "spec_version": "3.0.1",
+    "supplier": "",
+    "version": "3.0.1"
+  }
+}

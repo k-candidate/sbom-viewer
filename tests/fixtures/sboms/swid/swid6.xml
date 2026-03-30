@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SoftwareIdentity name="test-app" version="1.0.0" tagId="pkg:test/test-app@1.0.0">
+    <Entity name="Test Corp"/>
+    <Meta>
+        <description>Test application</description>
+    </Meta>
+    <License>
+        <Text>MIT</Text>
+    </License>
+</SoftwareIdentity>

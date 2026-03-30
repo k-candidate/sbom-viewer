@@ -1,0 +1,19 @@
+{
+  "component_rows": [
+    [
+      "test-app",
+      "1.0.0",
+      "",
+      "pkg:test/test-app@1.0.0"
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "swid/swid6.xml",
+  "metadata": {
+    "creation_date": "",
+    "name": "test-app",
+    "spec_version": "SWID",
+    "supplier": "Test Corp",
+    "version": "1.0.0"
+  }
+}

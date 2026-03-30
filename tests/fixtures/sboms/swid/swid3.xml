@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+	<SoftwareIdentity xmlns="http://standards.iso.org/iso/19770/-2/2015/schema.xsd"
+			  xmlns:xsi="htttp://www.w3.org/2001/XMLSchema-instance"
+			  name="Cisco Secure Endpoints for Android"
+			  tagId="Cisco-Cisco%20Secure%20Endpoints%20for%20Android-2.1.0"
+			  version="2.1.0">
+	  <Entity name="Cisco" role="softwareCreator"/>
+	  <Meta generator="SwiftBOM SBOM Generator v1.3" /> 
+      	<Link  rel="component" href="swid: Square-okhttp- 4.2.2"
+	       use="required" />
+      	<Link  rel="component" href="swid: design-design%20-2.0.3"
+	       use="required" />
+      	<Link  rel="component" href="swid: Bouncy%20Castle-bouncy-castle-1.62.0"
+	       use="required" />
+      	<Link  rel="component" href="swid: Apache%20Santuario-xmlsec-java-2.1.4"
+	       use="required" />
+      
+</SoftwareIdentity>

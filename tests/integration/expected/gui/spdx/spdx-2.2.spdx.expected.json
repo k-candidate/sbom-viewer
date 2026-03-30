@@ -1,0 +1,19 @@
+{
+  "component_rows": [
+    [
+      "hello",
+      "",
+      "GPL-3.0-or-later",
+      "git+https://github.com/swinslow/spdx-examples.git#example1/content"
+    ]
+  ],
+  "dependency_rows": [],
+  "fixture": "spdx/spdx-2.2.spdx",
+  "metadata": {
+    "creation_date": "2021-08-26T01:46:00Z",
+    "name": "hello",
+    "spec_version": "SPDX-2.2",
+    "supplier": "Unknown",
+    "version": "SPDX-2.2"
+  }
+}

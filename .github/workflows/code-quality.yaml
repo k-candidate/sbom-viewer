@@ -1,0 +1,11 @@
+name: Python Code Quality Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    uses: k-candidate/gha-workflows/.github/workflows/python-code-quality.yaml@main
+    with:
+      python-version: '3.14'

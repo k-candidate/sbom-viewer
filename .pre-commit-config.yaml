@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.10.12
+    hooks:
+      - id: uv-lock
+        name: "Ensure lock file is up-to-date"
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.7
+    hooks:
+      - id: ruff
+        name: "Organize imports"
+        args: [--select, I, --fix]
+      - id: ruff-check
+        name: "Lint with ruff"
+        args: [--fix]
+      - id: ruff-format
+        name: "Format with ruff"
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: "Check for type consistency"
+        entry: uv run mypy .
+        language: system
+        pass_filenames: false
+
+      - id: pytest
+        name: "Run pytest"
+        entry: uv run pytest tests/unit tests/integration -v
+        language: system
+        pass_filenames: false
+        

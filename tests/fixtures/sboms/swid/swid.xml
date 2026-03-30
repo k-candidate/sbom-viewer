@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+	<SoftwareIdentity xmlns="http://standards.iso.org/iso/19770/-2/2015/schema.xsd"
+			  xmlns:xsi="htttp://www.w3.org/2001/XMLSchema-instance"
+			  name="Snort"
+			  tagId="Cisco-Snort-3.0"
+			  version="3.0">
+	  <Entity name="Cisco" role="softwareCreator"/>
+	  <Meta generator="SwiftBOM SBOM Generator v1.3" /> 
+      	<Link  rel="component" href="swid: LibDAQ-LibDAQ-3.0.3"
+	       use="required" />
+      	<Link  rel="component" href="swid: Doug%20Song-libdnet-1.14"
+	       use="required" />
+      	<Link  rel="component" href="swid: OpenSSL-OpenSSL-1.1.1"
+	       use="required" />
+      	<Link  rel="component" href="swid: PCRE-pcre2-10.37"
+	       use="required" />
+      
+</SoftwareIdentity>
