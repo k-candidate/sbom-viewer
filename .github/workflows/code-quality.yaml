@@ -8,4 +8,4 @@ jobs:
   code-quality:
     uses: k-candidate/gha-workflows/.github/workflows/python-code-quality.yaml@main
     with:
-      python-version: '3.12.13'
+      python-version: '3.14'
