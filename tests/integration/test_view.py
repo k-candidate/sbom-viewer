@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -206,6 +207,56 @@ def test_show_error_uses_messagebox_and_updates_status(
 
     assert captured == [("Error", "boom")]
     assert main_view.status_label.cget("text") == "Error loading file"
+
+
+def test_resolve_asset_path_prefers_frozen_meipass(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    meipass = tmp_path / "bundle"
+    logo_dir = meipass / "assets" / "logo"
+    logo_dir.mkdir(parents=True)
+    icon_path = logo_dir / "sbom-viewer.png"
+    icon_path.write_bytes(b"png")
+
+    monkeypatch.setattr("app.view.sys.frozen", True, raising=False)
+    monkeypatch.setattr("app.view.sys._MEIPASS", str(meipass), raising=False)
+    monkeypatch.setattr(
+        "app.view.sys.executable", str(tmp_path / "app" / "sbom-viewer")
+    )
+
+    resolved = MainView._resolve_asset_path(
+        "assets", "logo", "sbom-viewer.png"
+    )
+
+    assert resolved == icon_path
+
+
+def test_resolve_asset_path_uses_project_root_when_not_frozen() -> None:
+    resolved = MainView._resolve_asset_path(
+        "assets", "logo", "sbom-viewer.png"
+    )
+
+    assert resolved == (
+        Path(__file__).resolve().parents[2]
+        / "assets"
+        / "logo"
+        / "sbom-viewer.png"
+    )
+
+
+def test_set_window_icon_ignores_tcl_errors(main_view: MainView) -> None:
+    original_icon = object()
+    main_view._app_icon_image = original_icon  # type: ignore[assignment]
+
+    def raise_tcl_error(*_args: Any, **_kwargs: Any) -> Any:
+        raise tk.TclError("bad icon")
+
+    main_view._resolve_asset_path = lambda *_parts: Path("fake.png")  # type: ignore[method-assign]
+    main_view.iconphoto = raise_tcl_error  # type: ignore[method-assign]
+
+    main_view.set_window_icon()
+
+    assert main_view._app_icon_image is None
 
 
 def test_snapshot_state_returns_rendered_widget_data(main_view: MainView) -> None:
