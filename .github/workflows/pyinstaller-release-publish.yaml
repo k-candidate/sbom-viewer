@@ -1,0 +1,108 @@
+name: PyInstaller release publish
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build from and upload assets to
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform_id: linux-x64
+          - os: ubuntu-24.04-arm
+            platform_id: linux-arm64
+          - os: windows-latest
+            platform_id: windows-x64
+          - os: windows-11-arm
+            platform_id: windows-arm64
+          - os: macos-26-intel
+            platform_id: macos-intel
+          - os: macos-latest
+            platform_id: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Determine release tag
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+          else
+            tag="${{ inputs.tag }}"
+          fi
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: Install Linux GUI runtime dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb tk tcl
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: uv run pyinstaller --noconfirm --clean sbom-viewer.spec
+
+      - name: Determine packaged app path
+        id: app-path
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            echo "app_dir=dist/sbom-viewer.app" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_dir=dist/sbom-viewer" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke test packaged app on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: xvfb-run -a uv run python scripts/smoke_test_pyinstaller.py --app-dir "${{ steps.app-path.outputs.app_dir }}"
+
+      - name: Smoke test packaged app on non-Linux
+        if: runner.os != 'Linux'
+        shell: bash
+        run: uv run python scripts/smoke_test_pyinstaller.py --app-dir "${{ steps.app-path.outputs.app_dir }}"
+
+      - name: Create versioned archive
+        shell: bash
+        run: |
+          mkdir -p packaged
+          uv run python scripts/package_pyinstaller_dist.py \
+            --app-dir "${{ steps.app-path.outputs.app_dir }}" \
+            --platform-id "${{ matrix.platform_id }}" \
+            --version "${{ steps.release.outputs.version }}" \
+            --output-dir packaged
+
+      - name: Upload release asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "${{ steps.release.outputs.tag }}" packaged/* --clobber

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from collections.abc import Sequence
+from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -27,12 +29,45 @@ class MainView(tk.Tk, SearchMixin):
         self.title("SBOM Viewer")
         self.geometry("1200x800")
         self.resizable(True, True)
+        self._app_icon_image: tk.PhotoImage | None = None
 
         self.search_var = tk.StringVar()
         self.deps_search_var = tk.StringVar()
 
+        self.set_window_icon()
         self.build_ui()
         self.bind_events()
+
+    def set_window_icon(self) -> None:
+        icon_path = self._resolve_asset_path(
+            "assets", "logo", "sbom-viewer.png"
+        )
+        if icon_path is None:
+            return
+
+        try:
+            self._app_icon_image = tk.PhotoImage(file=str(icon_path))
+            self.iconphoto(True, self._app_icon_image)
+        except tk.TclError:
+            self._app_icon_image = None
+
+    @staticmethod
+    def _resolve_asset_path(*parts: str) -> Path | None:
+        candidates = []
+        if getattr(sys, "frozen", False):
+            meipass = getattr(sys, "_MEIPASS", None)
+            if meipass:
+                candidates.append(Path(meipass))
+            candidates.append(Path(sys.executable).resolve().parent)
+
+        candidates.append(Path(__file__).resolve().parents[1])
+
+        for base_path in candidates:
+            asset_path = base_path.joinpath(*parts)
+            if asset_path.exists():
+                return asset_path
+
+        return None
 
     def build_ui(self) -> None:
         # Toolbar frame
