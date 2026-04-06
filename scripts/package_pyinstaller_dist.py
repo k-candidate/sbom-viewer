@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 from pathlib import Path
 
 
@@ -28,6 +29,21 @@ def extension_for(fmt: str) -> str:
     return ".zip"
 
 
+def archive_with_ditto(app_dir: Path, archive_path: Path) -> None:
+    subprocess.run(
+        [
+            "ditto",
+            "-c",
+            "-k",
+            "--sequesterRsrc",
+            "--keepParent",
+            str(app_dir),
+            str(archive_path),
+        ],
+        check=True,
+    )
+
+
 def main() -> None:
     args = build_parser().parse_args()
 
@@ -40,12 +56,18 @@ def main() -> None:
 
     fmt = archive_format(args.platform_id)
     base_name = output_dir / f"sbom-viewer-{args.version}-{args.platform_id}"
-    archive_path = shutil.make_archive(
-        str(base_name),
-        fmt,
-        root_dir=app_dir.parent,
-        base_dir=app_dir.name,
-    )
+    if args.platform_id.startswith("macos-"):
+        archive_path = Path(str(base_name) + extension_for(fmt))
+        archive_with_ditto(app_dir, archive_path)
+    else:
+        archive_path = Path(
+            shutil.make_archive(
+                str(base_name),
+                fmt,
+                root_dir=app_dir.parent,
+                base_dir=app_dir.name,
+            )
+        )
     print(Path(archive_path).name)
     print(base_name.name + extension_for(fmt))
 
