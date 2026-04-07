@@ -14,9 +14,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -31,13 +39,6 @@ jobs:
             @semantic-release/github \
             @semantic-release/release-notes-generator \
             conventional-changelog-conventionalcommits
-
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Run semantic-release
         env:
