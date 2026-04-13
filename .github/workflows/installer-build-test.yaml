@@ -1,0 +1,59 @@
+name: Installer build test
+
+on:
+  workflow_run:
+    workflows:
+      - PyInstaller build test
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: PyInstaller build test run ID to consume artifacts from
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build-dmg:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'pull_request')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-26-intel
+            platform_id: macos-intel
+          - os: macos-latest
+            platform_id: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Determine source run
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
