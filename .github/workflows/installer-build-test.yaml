@@ -171,6 +171,7 @@ jobs:
         shell: bash
         run: |
           dotnet tool install --global wix --version 6.0.2
+          dotnet tool install --global WixToolset.UI --version 6.0.2
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Find matching PyInstaller run
