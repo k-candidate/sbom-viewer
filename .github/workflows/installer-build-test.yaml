@@ -1,16 +1,12 @@
 name: Installer build test
 
 on:
-  workflow_run:
-    workflows:
-      - PyInstaller build test
-    types:
-      - completed
+  pull_request:
   workflow_dispatch:
     inputs:
       run_id:
-        description: PyInstaller build test run ID to consume artifacts from
-        required: true
+        description: Optional PyInstaller build test run ID to consume artifacts from
+        required: false
         type: string
 
 permissions:
@@ -19,10 +15,6 @@ permissions:
 
 jobs:
   build-dmg:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'pull_request')
     strategy:
       fail-fast: false
       matrix:
@@ -35,16 +27,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Determine source run
+      - name: Determine source ref
         id: source
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.event.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
           else
-            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
             echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v6
@@ -58,13 +50,45 @@ jobs:
         shell: bash
         run: uv sync --locked --all-extras
 
+      - name: Find matching PyInstaller run
+        id: pyinstaller-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.run_id }}" ]; then
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          run_id=$(
+            gh run list \
+              --workflow "PyInstaller build test" \
+              --branch "${{ steps.source.outputs.branch }}" \
+              --event pull_request \
+              --limit 20 \
+              --json databaseId,headSha \
+              --jq '.[] | select(.headSha == "${{ steps.source.outputs.ref }}") | .databaseId' |
+            head -n1
+          )
+          if [ -z "$run_id" ]; then
+            echo "No matching PyInstaller build test run found for ${{ steps.source.outputs.ref }}" >&2
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for matching PyInstaller run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh run watch "${{ steps.pyinstaller-run.outputs.run_id }}" --exit-status
+
       - name: Download matching PyInstaller artifact
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           artifact_name=$(
-            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.source.outputs.run_id }}/artifacts" \
+            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.pyinstaller-run.outputs.run_id }}/artifacts" \
               --paginate \
               --jq '.artifacts[] | select(.expired == false) | .name' |
             grep -- "-${{ matrix.platform_id }}$" |
@@ -75,7 +99,7 @@ jobs:
             exit 1
           fi
           echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
-          gh run download "${{ steps.source.outputs.run_id }}" -n "$artifact_name" -D downloaded
+          gh run download "${{ steps.pyinstaller-run.outputs.run_id }}" -n "$artifact_name" -D downloaded
 
       - name: Build DMG from packaged app
         shell: bash
