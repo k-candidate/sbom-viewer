@@ -172,8 +172,6 @@ jobs:
         run: |
           dotnet tool install --global wix --version 6.0.2
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          wix extension add --global WixToolset.UI.wixext/6.0.2
 
       - name: Find matching PyInstaller run
         id: pyinstaller-run

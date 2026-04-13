@@ -77,6 +77,3 @@ def test_build_wxs_includes_shortcut_entries(tmp_path: Path) -> None:
     assert 'Name="SBOM Viewer"' in text
     assert "ApplicationStartMenuShortcut" in text
     assert "ApplicationDesktopShortcut" in text
-    assert "INSTALLDESKTOPSHORTCUT" in text
-    assert "WixUI_FeatureTree" in text
-    assert "DesktopShortcutFeature" in text

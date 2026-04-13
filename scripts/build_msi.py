@@ -10,9 +10,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 WIX_NAMESPACE = "http://wixtoolset.org/schemas/v4/wxs"
-WIX_UI_NAMESPACE = "http://wixtoolset.org/schemas/v4/wxs/ui"
 ET.register_namespace("", WIX_NAMESPACE)
-ET.register_namespace("ui", WIX_UI_NAMESPACE)
 
 PRODUCT_NAME = "SBOM Viewer"
 MANUFACTURER = "k-candidate"
@@ -73,13 +71,8 @@ def wix_name() -> str:
     return f"{{{WIX_NAMESPACE}}}"
 
 
-def wix_ui_name() -> str:
-    return f"{{{WIX_UI_NAMESPACE}}}"
-
-
 def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
     ns = wix_name()
-    ui_ns = wix_ui_name()
     wix = ET.Element(f"{ns}Wix")
 
     package = ET.SubElement(
@@ -118,7 +111,6 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
         f"{ns}Property",
         {"Id": "INSTALLDESKTOPSHORTCUT", "Value": "0"},
     )
-    ET.SubElement(package, f"{ui_ns}WixUI", {"Id": "WixUI_FeatureTree"})
 
     standard_dir = ET.SubElement(
         package, f"{ns}StandardDirectory", {"Id": "ProgramFiles6432Folder"}
@@ -265,6 +257,8 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
             "KeyPath": "yes",
         },
     )
+    component_ids.append(desktop_component_id)
+
     main_feature = ET.SubElement(
         package,
         f"{ns}Feature",
@@ -273,33 +267,8 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
             "Title": PRODUCT_NAME,
             "Description": "Install SBOM Viewer.",
             "Level": "1",
-            "Display": "expand",
-            "ConfigurableDirectory": "INSTALLFOLDER",
-            "AllowAdvertise": "no",
-            "Absent": "disallow",
         },
     )
-    desktop_feature = ET.SubElement(
-        main_feature,
-        f"{ns}Feature",
-        {
-            "Id": "DesktopShortcutFeature",
-            "Title": "Desktop shortcut",
-            "Description": "Create a desktop shortcut for SBOM Viewer.",
-            "Level": "2",
-            "AllowAdvertise": "no",
-        },
-    )
-    ET.SubElement(
-        desktop_feature,
-        f"{ns}Condition",
-        {"Level": "1"},
-    ).text = "INSTALLDESKTOPSHORTCUT=1"
-    ET.SubElement(
-        desktop_feature,
-        f"{ns}Condition",
-        {"Level": "2"},
-    ).text = "INSTALLDESKTOPSHORTCUT<>1"
 
     component_fragment = ET.SubElement(wix, f"{ns}Fragment")
     component_group = ET.SubElement(
@@ -311,20 +280,6 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
         )
     ET.SubElement(
         main_feature, f"{ns}ComponentGroupRef", {"Id": "ProductComponents"}
-    )
-    desktop_fragment = ET.SubElement(wix, f"{ns}Fragment")
-    desktop_group = ET.SubElement(
-        desktop_fragment,
-        f"{ns}ComponentGroup",
-        {"Id": "DesktopShortcutComponents"},
-    )
-    ET.SubElement(
-        desktop_group, f"{ns}ComponentRef", {"Id": desktop_component_id}
-    )
-    ET.SubElement(
-        desktop_feature,
-        f"{ns}ComponentGroupRef",
-        {"Id": "DesktopShortcutComponents"},
     )
 
     ET.indent(wix, space="  ")
@@ -339,8 +294,6 @@ def build_msi(wxs_path: Path, output_path: Path, arch: str) -> None:
             "wix",
             "build",
             str(wxs_path),
-            "-ext",
-            "WixToolset.UI.wixext",
             "-arch",
             arch,
             "-o",
