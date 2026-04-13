@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "macOS" ]; then
-            echo "app_dir=dist/sbom-viewer.app" >> "$GITHUB_OUTPUT"
+            echo "app_dir=dist/SBOM Viewer.app" >> "$GITHUB_OUTPUT"
           else
             echo "app_dir=dist/sbom-viewer" >> "$GITHUB_OUTPUT"
           fi
