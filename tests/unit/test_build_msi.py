@@ -59,3 +59,22 @@ def test_installer_arch_rejects_other_platforms() -> None:
 
     with pytest.raises(SystemExit, match="Unsupported Windows platform id"):
         module.installer_arch("linux-x64")
+
+
+def test_build_wxs_includes_shortcut_entries(tmp_path: Path) -> None:
+    module = load_module()
+    app_dir = tmp_path / "sbom-viewer"
+    wxs_path = tmp_path / "sbom-viewer.wxs"
+    (app_dir / "_internal").mkdir(parents=True)
+    (app_dir / "sbom-viewer.exe").write_text("exe", encoding="utf-8")
+    (app_dir / "_internal" / "base_library.zip").write_text(
+        "zip", encoding="utf-8"
+    )
+
+    module.build_wxs(app_dir, "1.2.3", wxs_path)
+
+    text = wxs_path.read_text(encoding="utf-8")
+    assert 'Name="SBOM Viewer"' in text
+    assert "ApplicationStartMenuShortcut" in text
+    assert "ApplicationDesktopShortcut" in text
+    assert "INSTALLDESKTOPSHORTCUT" in text

@@ -16,6 +16,8 @@ PRODUCT_NAME = "SBOM Viewer"
 MANUFACTURER = "k-candidate"
 UPGRADE_CODE = "57D5FE50-0CD0-45E7-B73D-5A8A136F4B78"
 APP_EXE_NAME = "sbom-viewer.exe"
+START_MENU_SHORTCUT_NAME = PRODUCT_NAME
+DESKTOP_SHORTCUT_NAME = PRODUCT_NAME
 ICON_PATH = Path("assets/icons/sbom-viewer.ico").resolve()
 GUID_NAMESPACE = uuid.UUID("9ef7137c-5b0a-4574-9f44-0f70720b5f6c")
 
@@ -104,6 +106,11 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
         f"{ns}Property",
         {"Id": "ARPPRODUCTICON", "Value": "AppIcon"},
     )
+    ET.SubElement(
+        package,
+        f"{ns}Property",
+        {"Id": "INSTALLDESKTOPSHORTCUT", "Value": "0"},
+    )
 
     standard_dir = ET.SubElement(
         package, f"{ns}StandardDirectory", {"Id": "ProgramFiles6432Folder"}
@@ -121,6 +128,8 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
 
     directory_elements: dict[Path, ET.Element] = {Path("."): install_dir}
     component_ids: list[str] = []
+    executable_component_id: str | None = None
+    executable_file_id: str | None = None
 
     for file_path in sorted(
         path for path in app_dir.rglob("*") if path.is_file()
@@ -146,15 +155,113 @@ def build_wxs(app_dir: Path, version: str, output_path: Path) -> None:
             f"{ns}Component",
             {"Id": component_id, "Guid": component_guid(rel_path)},
         )
+        file_id = safe_id("fil", rel_path.as_posix())
         ET.SubElement(
             component,
             f"{ns}File",
             {
-                "Id": safe_id("fil", rel_path.as_posix()),
+                "Id": file_id,
                 "Source": str(file_path),
                 "KeyPath": "yes",
             },
         )
+        if rel_path.name == APP_EXE_NAME:
+            executable_component_id = component_id
+            executable_file_id = file_id
+
+    if executable_component_id is None or executable_file_id is None:
+        raise SystemExit(
+            f"Could not identify {APP_EXE_NAME} for shortcut creation"
+        )
+
+    program_menu = ET.SubElement(
+        package, f"{ns}StandardDirectory", {"Id": "ProgramMenuFolder"}
+    )
+    program_menu_vendor = ET.SubElement(
+        program_menu,
+        f"{ns}Directory",
+        {"Id": "ProgramMenuManufacturerFolder", "Name": MANUFACTURER},
+    )
+    program_menu_dir = ET.SubElement(
+        program_menu_vendor,
+        f"{ns}Directory",
+        {"Id": "ProgramMenuAppFolder", "Name": PRODUCT_NAME},
+    )
+    program_menu_component_id = "cmp_program_menu_shortcut"
+    program_menu_component = ET.SubElement(
+        program_menu_dir,
+        f"{ns}Component",
+        {"Id": program_menu_component_id, "Guid": str(uuid.uuid4()).upper()},
+    )
+    ET.SubElement(
+        program_menu_component,
+        f"{ns}Shortcut",
+        {
+            "Id": "ApplicationStartMenuShortcut",
+            "Name": START_MENU_SHORTCUT_NAME,
+            "Target": f"[INSTALLFOLDER]{APP_EXE_NAME}",
+            "WorkingDirectory": "INSTALLFOLDER",
+            "Icon": "AppIcon",
+            "Advertise": "no",
+        },
+    )
+    ET.SubElement(
+        program_menu_component,
+        f"{ns}RemoveFolder",
+        {"Id": "ProgramMenuAppFolder", "On": "uninstall"},
+    )
+    ET.SubElement(
+        program_menu_component,
+        f"{ns}RegistryValue",
+        {
+            "Root": "HKCU",
+            "Key": rf"Software\{MANUFACTURER}\{PRODUCT_NAME}",
+            "Name": "StartMenuShortcutInstalled",
+            "Type": "integer",
+            "Value": "1",
+            "KeyPath": "yes",
+        },
+    )
+    component_ids.append(program_menu_component_id)
+
+    desktop_dir = ET.SubElement(
+        package, f"{ns}StandardDirectory", {"Id": "DesktopFolder"}
+    )
+    desktop_component_id = "cmp_desktop_shortcut"
+    desktop_component = ET.SubElement(
+        desktop_dir,
+        f"{ns}Component",
+        {"Id": desktop_component_id, "Guid": str(uuid.uuid4()).upper()},
+    )
+    ET.SubElement(
+        desktop_component,
+        f"{ns}Condition",
+    ).text = "INSTALLDESKTOPSHORTCUT=1"
+    ET.SubElement(
+        desktop_component,
+        f"{ns}Shortcut",
+        {
+            "Id": "ApplicationDesktopShortcut",
+            "Name": DESKTOP_SHORTCUT_NAME,
+            "Target": f"[INSTALLFOLDER]{APP_EXE_NAME}",
+            "WorkingDirectory": "INSTALLFOLDER",
+            "Icon": "AppIcon",
+            "Advertise": "no",
+        },
+    )
+    ET.SubElement(
+        desktop_component,
+        f"{ns}RegistryValue",
+        {
+            "Root": "HKCU",
+            "Key": rf"Software\{MANUFACTURER}\{PRODUCT_NAME}",
+            "Name": "DesktopShortcutInstalled",
+            "Type": "integer",
+            "Value": "1",
+            "KeyPath": "yes",
+        },
+    )
+    component_ids.append(desktop_component_id)
 
     feature = ET.SubElement(
         package,

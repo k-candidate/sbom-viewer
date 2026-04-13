@@ -11,7 +11,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Mount a DMG and verify the expected app bundle layout."
     )
     parser.add_argument("--dmg-path", required=True)
-    parser.add_argument("--app-name", default="sbom-viewer.app")
+    parser.add_argument("--app-name", default="SBOM Viewer.app")
     return parser
 
 

@@ -12,6 +12,7 @@ PROJECT_ROOT = Path.cwd()
 PYPROJECT = PROJECT_ROOT / "pyproject.toml"
 PROJECT = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
 APP_NAME = PROJECT["name"]
+DISPLAY_NAME = "SBOM Viewer"
 APP_VERSION = PROJECT["version"]
 BUNDLE_IDENTIFIER = "io.github.k-candidate.sbom-viewer"
 IS_MACOS = sys.platform == "darwin"
@@ -82,13 +83,14 @@ coll = COLLECT(
 if IS_MACOS:
     app = BUNDLE(
         coll,
-        name=f"{APP_NAME}.app",
+        name=f"{DISPLAY_NAME}.app",
         icon=MACOS_ICON,
         bundle_identifier=BUNDLE_IDENTIFIER,
         version=APP_VERSION,
         info_plist={
-            "CFBundleName": APP_NAME,
-            "CFBundleDisplayName": APP_NAME,
+            "CFBundleName": DISPLAY_NAME,
+            "CFBundleDisplayName": DISPLAY_NAME,
+            "CFBundleExecutable": APP_NAME,
             "CFBundleShortVersionString": APP_VERSION,
             "CFBundleVersion": APP_VERSION,
             "NSHighResolutionCapable": True,
