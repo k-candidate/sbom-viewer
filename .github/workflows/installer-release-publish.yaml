@@ -198,3 +198,72 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: gh release upload "v${version}" packaged/*.msi --clobber
+
+  build-deb:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform_id: linux-x64
+          - os: ubuntu-24.04-arm
+            platform_id: linux-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Download PyInstaller release artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          artifact_name=$(
+            gh api "repos/${{ github.repository }}/releases/latest" \
+              --jq '.assets[] | select(.name | endswith("-${{ matrix.platform_id }}.zip")) | .name' |
+            head -n1
+          )
+          if [ -z "$artifact_name" ]; then
+            echo "No artifact found for platform ${{ matrix.platform_id }}" >&2
+            exit 1
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          gh release download --repo "${{ github.repository }}" -p "$artifact_name" -D downloaded
+
+      - name: Build DEB from packaged app
+        shell: bash
+        run: |
+          archive_path=$(find downloaded -type f \( -name "*.zip" -o -name "*.tar.gz" \) | head -n1)
+          if [ -z "$archive_path" ]; then
+            echo "No Linux app archive found in downloaded artifact" >&2
+            exit 1
+          fi
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          echo "version=$version" >> "$GITHUB_ENV"
+          mkdir -p packaged
+          uv run python scripts/build_deb.py \
+            --app-archive "$archive_path" \
+            --output-path "packaged/sbom-viewer_${version}_$(dpkg --print-architecture).deb" \
+            --version "$version" \
+            --platform-id "${{ matrix.platform_id }}"
+
+      - name: Smoke test DEB
+        shell: bash
+        run: |
+          deb_path=$(find packaged -type f -name "*.deb" | head -n1)
+          uv run python scripts/smoke_test_deb.py --deb-path "$deb_path"
+
+      - name: Upload DEB to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "v${version}" packaged/*.deb --clobber

@@ -254,3 +254,121 @@ jobs:
           path: packaged/*.msi
           if-no-files-found: error
           retention-days: 7
+
+  build-deb:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform_id: linux-x64
+          - os: ubuntu-24.04-arm
+            platform_id: linux-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Determine source ref
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.event.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Find matching PyInstaller run
+        id: pyinstaller-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.run_id }}" ]; then
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          run_id=$(
+            gh run list \
+              --workflow "PyInstaller build test" \
+              --branch "${{ steps.source.outputs.branch }}" \
+              --event pull_request \
+              --limit 20 \
+              --json databaseId,headSha \
+              --jq '.[] | select(.headSha == "${{ steps.source.outputs.ref }}") | .databaseId' |
+            head -n1
+          )
+          if [ -z "$run_id" ]; then
+            echo "No matching PyInstaller build test run found for ${{ steps.source.outputs.ref }}" >&2
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for matching PyInstaller run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh run watch "${{ steps.pyinstaller-run.outputs.run_id }}" --exit-status
+
+      - name: Download matching PyInstaller artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          artifact_name=$(
+            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.pyinstaller-run.outputs.run_id }}/artifacts" \
+              --paginate \
+              --jq '.artifacts[] | select(.expired == false) | .name' |
+            grep -- "-${{ matrix.platform_id }}$" |
+            head -n1
+          )
+          if [ -z "$artifact_name" ]; then
+            echo "No artifact found for platform ${{ matrix.platform_id }}" >&2
+            exit 1
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          gh run download "${{ steps.pyinstaller-run.outputs.run_id }}" -n "$artifact_name" -D downloaded
+
+      - name: Build DEB from packaged app
+        shell: bash
+        run: |
+          archive_path=$(find downloaded -type f \( -name "*.zip" -o -name "*.tar.gz" \) | head -n1)
+          if [ -z "$archive_path" ]; then
+            echo "No Linux app archive found in downloaded artifact" >&2
+            exit 1
+          fi
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          mkdir -p packaged
+          uv run python scripts/build_deb.py \
+            --app-archive "$archive_path" \
+            --output-path "packaged/sbom-viewer_${version}_$(dpkg --print-architecture).deb" \
+            --version "$version" \
+            --platform-id "${{ matrix.platform_id }}"
+
+      - name: Smoke test DEB
+        shell: bash
+        run: |
+          deb_path=$(find packaged -type f -name "*.deb" | head -n1)
+          uv run python scripts/smoke_test_deb.py --deb-path "$deb_path"
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.artifact_name }}-deb
+          path: packaged/*.deb
+          if-no-files-found: error
+          retention-days: 7
