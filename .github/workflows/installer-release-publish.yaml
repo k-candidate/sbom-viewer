@@ -1,0 +1,269 @@
+name: Installer release publish
+
+on:
+  workflow_run:
+    workflows:
+      - PyInstaller release publish
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: PyInstaller release publish run ID to consume artifacts from
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  build-and-upload-dmg:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-26-intel
+            platform_id: macos-intel
+          - os: macos-latest
+            platform_id: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Determine source run
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Download matching PyInstaller release artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          artifact_name=$(
+            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.source.outputs.run_id }}/artifacts" \
+              --paginate \
+              --jq '.artifacts[] | select(.expired == false) | .name' |
+            grep -- "-${{ matrix.platform_id }}$" |
+            head -n1
+          )
+          if [ -z "$artifact_name" ]; then
+            echo "No artifact found for platform ${{ matrix.platform_id }}" >&2
+            exit 1
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          echo "version=$version" >> "$GITHUB_ENV"
+          gh run download "${{ steps.source.outputs.run_id }}" -n "$artifact_name" -D downloaded
+
+      - name: Build DMG from packaged app
+        shell: bash
+        run: |
+          archive_path=$(find downloaded -type f -name "*.zip" | head -n1)
+          if [ -z "$archive_path" ]; then
+            echo "No macOS app archive found in downloaded artifact" >&2
+            exit 1
+          fi
+          mkdir -p packaged
+          uv run python scripts/build_dmg.py \
+            --app-archive "$archive_path" \
+            --output-path "packaged/sbom-viewer-${version}-${{ matrix.platform_id }}.dmg" \
+            --volume-name "SBOM Viewer"
+
+      - name: Smoke test DMG
+        shell: bash
+        run: |
+          dmg_path=$(find packaged -type f -name "*.dmg" | head -n1)
+          uv run python scripts/smoke_test_dmg.py --dmg-path "$dmg_path"
+
+      - name: Upload DMG to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "v${version}" packaged/*.dmg --clobber
+
+  build-and-upload-msi:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform_id: windows-x64
+          - os: windows-11-arm
+            platform_id: windows-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Determine source run
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Install WiX
+        shell: bash
+        run: |
+          dotnet tool install --global wix --version 6.0.2
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Download matching PyInstaller release artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          artifact_name=$(
+            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.source.outputs.run_id }}/artifacts" \
+              --paginate \
+              --jq '.artifacts[] | select(.expired == false) | .name' |
+            grep -- "-${{ matrix.platform_id }}$" |
+            head -n1
+          )
+          if [ -z "$artifact_name" ]; then
+            echo "No artifact found for platform ${{ matrix.platform_id }}" >&2
+            exit 1
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          echo "version=$version" >> "$GITHUB_ENV"
+          gh run download "${{ steps.source.outputs.run_id }}" -n "$artifact_name" -D downloaded
+
+      - name: Build MSI from packaged app
+        shell: bash
+        run: |
+          archive_path=$(find downloaded -type f -name "*.zip" | head -n1)
+          if [ -z "$archive_path" ]; then
+            echo "No Windows app archive found in downloaded artifact" >&2
+            exit 1
+          fi
+          mkdir -p packaged
+          uv run python scripts/build_msi.py \
+            --app-archive "$archive_path" \
+            --output-path "packaged/sbom-viewer-${version}-${{ matrix.platform_id }}.msi" \
+            --version "$version" \
+            --platform-id "${{ matrix.platform_id }}"
+
+      - name: Smoke test MSI
+        shell: bash
+        run: |
+          msi_path=$(find packaged -type f -name "*.msi" | head -n1)
+          uv run python scripts/smoke_test_msi.py --msi-path "$msi_path"
+
+      - name: Upload MSI to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "v${version}" packaged/*.msi --clobber
+
+  build-deb:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform_id: linux-x64
+          - os: ubuntu-24.04-arm
+            platform_id: linux-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies and dev tools
+        shell: bash
+        run: uv sync --locked --all-extras
+
+      - name: Download PyInstaller release artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          artifact_name=$(
+            gh api "repos/${{ github.repository }}/releases/latest" \
+              --jq '.assets[] | select(.name | endswith("-${{ matrix.platform_id }}.zip")) | .name' |
+            head -n1
+          )
+          if [ -z "$artifact_name" ]; then
+            echo "No artifact found for platform ${{ matrix.platform_id }}" >&2
+            exit 1
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          gh release download --repo "${{ github.repository }}" -p "$artifact_name" -D downloaded
+
+      - name: Build DEB from packaged app
+        shell: bash
+        run: |
+          archive_path=$(find downloaded -type f \( -name "*.zip" -o -name "*.tar.gz" \) | head -n1)
+          if [ -z "$archive_path" ]; then
+            echo "No Linux app archive found in downloaded artifact" >&2
+            exit 1
+          fi
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          echo "version=$version" >> "$GITHUB_ENV"
+          mkdir -p packaged
+          uv run python scripts/build_deb.py \
+            --app-archive "$archive_path" \
+            --output-path "packaged/sbom-viewer_${version}_$(dpkg --print-architecture).deb" \
+            --version "$version" \
+            --platform-id "${{ matrix.platform_id }}"
+
+      - name: Smoke test DEB
+        shell: bash
+        run: |
+          deb_path=$(find packaged -type f -name "*.deb" | head -n1)
+          uv run python scripts/smoke_test_deb.py --deb-path "$deb_path"
+
+      - name: Upload DEB to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "v${version}" packaged/*.deb --clobber

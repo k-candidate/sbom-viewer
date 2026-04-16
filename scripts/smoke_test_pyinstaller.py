@@ -30,6 +30,7 @@ def find_executable(app_dir: Path) -> Path:
     candidates = [
         app_dir / "sbom-viewer",
         app_dir / "sbom-viewer.exe",
+        app_dir / "Contents" / "MacOS" / "sbom-viewer",
     ]
     for candidate in candidates:
         if candidate.is_file():

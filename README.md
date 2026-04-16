@@ -1,4 +1,4 @@
-# sbom-viewer
+# SBOM Viewer
 
 Desktop GUI for viewing Software Bill of Materials (SBOM) files in multiple formats.
 
@@ -40,7 +40,7 @@ uv run pyinstaller --noconfirm --clean sbom-viewer.spec
 The built app will be created in:
 
 - `dist/sbom-viewer/` on Linux and Windows
-- `dist/sbom-viewer.app` on macOS
+- `dist/SBOM Viewer.app` on macOS
 
 Smoke-test the packaged app:
 
