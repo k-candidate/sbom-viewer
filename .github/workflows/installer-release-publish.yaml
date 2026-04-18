@@ -200,6 +200,9 @@ jobs:
         run: gh release upload "v${version}" packaged/*.msi --clobber
 
   build-deb:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -212,7 +215,21 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Determine source run
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.ref }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -227,8 +244,10 @@ jobs:
         shell: bash
         run: |
           artifact_name=$(
-            gh api "repos/${{ github.repository }}/releases/latest" \
-              --jq '.assets[] | select(.name | endswith("-${{ matrix.platform_id }}.zip")) | .name' |
+            gh api "repos/${{ github.repository }}/actions/runs/${{ steps.source.outputs.run_id }}/artifacts" \
+              --paginate \
+              --jq '.artifacts[] | select(.expired == false) | .name' |
+            grep -- "-${{ matrix.platform_id }}$" |
             head -n1
           )
           if [ -z "$artifact_name" ]; then
@@ -236,12 +255,12 @@ jobs:
             exit 1
           fi
           echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
-          gh release download --repo "${{ github.repository }}" -p "$artifact_name" -D downloaded
+          gh run download "${{ steps.source.outputs.run_id }}" -n "$artifact_name" -D downloaded
 
       - name: Build DEB from packaged app
         shell: bash
         run: |
-          archive_path=$(find downloaded -type f \( -name "*.zip" -o -name "*.tar.gz" \) | head -n1)
+          archive_path=$(find downloaded -type f -name "*.zip" | head -n1)
           if [ -z "$archive_path" ]; then
             echo "No Linux app archive found in downloaded artifact" >&2
             exit 1
