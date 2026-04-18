@@ -255,19 +255,19 @@ jobs:
             exit 1
           fi
           echo "artifact_name=$artifact_name" >> "$GITHUB_ENV"
+          version="${artifact_name#sbom-viewer-}"
+          version="${version%-${{ matrix.platform_id }}}"
+          echo "version=$version" >> "$GITHUB_ENV"
           gh run download "${{ steps.source.outputs.run_id }}" -n "$artifact_name" -D downloaded
 
       - name: Build DEB from packaged app
         shell: bash
         run: |
-          archive_path=$(find downloaded -type f -name "*.zip" | head -n1)
+          archive_path=$(find downloaded -type f \( -name "*.zip" -o -name "*.tar.gz" \) | head -n1)
           if [ -z "$archive_path" ]; then
             echo "No Linux app archive found in downloaded artifact" >&2
             exit 1
           fi
-          version="${artifact_name#sbom-viewer-}"
-          version="${version%-${{ matrix.platform_id }}}"
-          echo "version=$version" >> "$GITHUB_ENV"
           mkdir -p packaged
           uv run python scripts/build_deb.py \
             --app-archive "$archive_path" \
