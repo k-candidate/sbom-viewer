@@ -106,3 +106,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: gh release upload "${{ steps.release.outputs.tag }}" packaged/* --clobber
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-viewer-${{ steps.release.outputs.version }}-${{ matrix.platform_id }}
+          path: packaged/*
+          retention-days: 1
