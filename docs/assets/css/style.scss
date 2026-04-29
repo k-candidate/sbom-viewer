@@ -1,0 +1,127 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+.page-header {
+  background-color: #155e75;
+  background-image: linear-gradient(130deg, #155e75, #2f855a);
+}
+
+.project-tagline {
+  opacity: 0.92;
+}
+
+.main-content {
+  color: #1f2937;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(96px, 132px) 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  margin: 1rem 0 0.75rem;
+}
+
+.app-logo {
+  width: 100%;
+  max-width: 132px;
+  border-radius: 8px;
+}
+
+.lede {
+  font-size: 1.15rem;
+  line-height: 1.65;
+}
+
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.btn.primary {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.release-status {
+  color: #4b5563;
+}
+
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 1rem 0 2rem;
+}
+
+.download-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.download-column h3 {
+  margin: 0;
+  color: #155e75;
+}
+
+.download-card {
+  border: 1px solid #d8e2e8;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.download-card h4 {
+  margin-top: 0;
+  color: #155e75;
+}
+
+.download-card p {
+  min-height: 3rem;
+}
+
+.download-card .btn {
+  color: #155e75;
+  border-color: #b8ccd6;
+}
+
+.download-card .btn:hover,
+.download-card .btn:focus {
+  color: #0f4858;
+  border-color: #155e75;
+  text-decoration: none;
+}
+
+.download-card.missing {
+  opacity: 0.72;
+}
+
+.download-card.missing .download-button {
+  pointer-events: none;
+}
+
+@media screen and (max-width: 42em) {
+  .intro {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .app-logo {
+    margin: 0 auto;
+  }
+
+  .download-actions {
+    display: grid;
+  }
+
+  .download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .download-card p {
+    min-height: 0;
+  }
+}

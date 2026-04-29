@@ -1,0 +1,17 @@
+title: SBOM Viewer
+description: Desktop GUI for viewing Software Bill of Materials in SPDX, CycloneDX, and SWID formats.
+url: "https://k-candidate.github.io"
+baseurl: "/sbom-viewer"
+repository: k-candidate/sbom-viewer
+theme: jekyll-theme-cayman
+show_downloads: false
+
+github:
+  build_revision: local
+  is_project_page: true
+  owner_name: k-candidate
+  owner_url: https://github.com/k-candidate
+  repository_name: sbom-viewer
+  repository_url: https://github.com/k-candidate/sbom-viewer
+  tar_url: https://github.com/k-candidate/sbom-viewer/archive/refs/heads/main.tar.gz
+  zip_url: https://github.com/k-candidate/sbom-viewer/archive/refs/heads/main.zip
